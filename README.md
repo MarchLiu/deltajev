@@ -59,15 +59,18 @@ logit reading, fresh chat mode, no fine-tuning, no calibration (details in
 |---|---:|---:|---|
 | random (option-count weighted) | 0.318 | — | computed |
 | Qwen3.5-4B (deltajev v0.1) | 0.574 | 0.365 | measured |
-| **Qwen3.8-27B BF16 (deltajev v0.1)** | **0.726** | **0.255** | measured |
+| **Qwen3.8-27B BF16 (deltajev v0.1)** | **0.710** | **0.280** | measured, held-out protocol |
 | TypeSafe Jev (published) | 0.727 | — | [model card](https://typesafe.ai) |
 | TypeSafe Jev (independent re-measure) | 0.626 | — | [laya-jev-benchmark](https://huggingface.co/datasets/Luni/laya-jev-benchmark) |
 | fine-tuned specialists (Laya / Verdict 2.0) | 0.73–0.77 | — | in-domain, not comparable |
 
-Caveats: gold labels are 3-annotator consensus spreads (±0.02 argmax noise); our
-noul prompting fix was tuned on a subset of this benchmark (mild dev leakage
-until a held-out rerun); latency claims deferred until the GDN-optimized probe.
-Latency (MPS, unoptimized GDN kernels): 27B 0.21 decisions/s, 4B 0.91.
+Held-out discipline: all prompt selection ran on the benchmark's *train* split
+(frozen variant `minimal_system`); test was scored once. Leave-one-workflow-out
+on 4B gives 0.596 mean (≥ the 0.573 of the earlier tuned prompt), so the
+earlier 0.726 showed no leakage inflation; 0.710 is the defensible headline.
+Gold labels are 3-annotator consensus spreads (±0.02 argmax noise).
+Latency (MPS, unoptimized GDN kernels): 27B 0.24 decisions/s, 4B 0.91; the
+shared-state speedup grows with state length (2.4×→4.5×), see `results/LOG.md`.
 
 ## License
 

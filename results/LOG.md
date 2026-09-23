@@ -162,3 +162,24 @@ LOWO 均值 0.596 ≥ 原"带泄漏"全量 0.5735——held-out 选出来的 pro
 比调参版更差，泄漏膨胀的证据不存在。
 
 **最终干净验证**：27B 全量 test + 冻结 minimal_system 运行中（后台）。
+
+## 最终干净数字（2026-09-23，方法论冻结后）
+
+**Qwen3.8-27B BF16，zero-shot，test split 只跑一次，prompt 由 train split
+独立选出：accuracy 0.710，mean TVD 0.280。**
+
+按类型：noul 0.775 / score 0.695 / choice 0.665。
+吞吐 0.244 decisions/s（MPS 无优化内核）。
+
+与迭代版（base 变体 0.7255）相比低 1.5 个点，在采样噪声（±2 点）范围内——
+与 LOWO 结论一致：原数字没有实质泄漏膨胀，但 0.710 是方法论上站得住的
+headline。README 结果表以此为准。
+
+| 口径 | accuracy | TVD | 备注 |
+|---|---:|---:|---|
+| 27B base（prompt 在 test 子集上调过） | 0.7255 | 0.2548 | 历史数字，仅作对照 |
+| **27B minimal_system（train 冻结，test 一次）** | **0.710** | **0.280** | **headline** |
+| Jev 发布方口径 | 0.727 | — | |
+| Jev 独立复测 raw | 0.626 | — | |
+
+预测逐行存 `results/raw/preds_Qwen3.8-27B_minimal_system_test_fresh_full.jsonl`。
