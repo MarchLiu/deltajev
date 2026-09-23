@@ -9,7 +9,7 @@ venv/
 .hf-cache/
 data/*.parquet
 results/raw/predictions_*.jsonl
-results/raw/preds_Qwen3.8-27B_minimal_system_test_fresh_full.jsonl
+results/raw/preds_*.jsonl
 models/
 *.safetensors
 .DS_Store
