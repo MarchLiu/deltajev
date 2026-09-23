@@ -31,6 +31,36 @@ SYSTEM_INSTRUCTION = (
     "No explanation. Answer with a single letter."
 )
 
+# Prompt variants for held-out selection. "base" is the frozen v0.1 prompt.
+VARIANTS: dict[str, dict] = {
+    "base": {},
+    "noul_tf": {
+        "noul_block": "Q: True or false: {prompt}",
+    },
+    "minimal_system": {
+        "system": "Answer each question with exactly one uppercase letter.",
+    },
+    "state_last": {
+        "state_position": "last",
+    },
+}
+
+
+def render_question_block(q: Question, variant: str = "base") -> str:
+    spec = VARIANTS[variant]
+    tmpl = spec.get("noul_block")
+    if q.qtype == "noul" and tmpl:
+        lines = [tmpl.format(prompt=q.prompt)]
+    elif q.qtype == "noul":
+        # Instruction is a proposition: frame it as an explicit true/false
+        # judgment, otherwise instruction-tuned models just agree with it.
+        lines = [f"Q: Judge this statement about the state. Statement: {q.prompt}"]
+    else:
+        lines = [f"Q: {q.prompt}"]
+    for letter, (label, desc) in zip(q.letters, q.options.items()):
+        lines.append(f"{letter}. {label}: {desc}")
+    return "\n".join(lines)
+
 
 @dataclass
 class ScoredRecord:
@@ -40,18 +70,23 @@ class ScoredRecord:
 
 
 class DecisionEngine:
-    def __init__(self, model, tokenizer, device: str | None = None, use_chat: bool = True):
+    def __init__(self, model, tokenizer, device: str | None = None, use_chat: bool = True,
+                 variant: str = "base"):
+        if variant not in VARIANTS:
+            raise SchemaError(f"unknown prompt variant: {variant!r}")
         self.model = model.eval()
         self.tok = tokenizer
         self.device = device or next(model.parameters()).device
         self.use_chat = use_chat
+        self.variant = variant
         self._verify_slots()
 
     # ---------- chat templating ----------
 
     def _chat_prompt(self, user_content: str) -> str:
+        system = VARIANTS[self.variant].get("system", SYSTEM_INSTRUCTION)
         messages = [
-            {"role": "system", "content": SYSTEM_INSTRUCTION},
+            {"role": "system", "content": system},
             {"role": "user", "content": user_content},
         ]
         return self.tok.apply_chat_template(
@@ -100,15 +135,7 @@ class DecisionEngine:
     # ---------- encoding ----------
 
     def _question_block(self, q: Question) -> str:
-        if q.qtype == "noul":
-            # Instruction is a proposition: frame it as an explicit true/false
-            # judgment, otherwise instruction-tuned models just agree with it.
-            lines = [f"Q: Judge this statement about the state. Statement: {q.prompt}"]
-        else:
-            lines = [f"Q: {q.prompt}"]
-        for letter, (label, desc) in zip(q.letters, q.options.items()):
-            lines.append(f"{letter}. {label}: {desc}")
-        return "\n".join(lines)
+        return render_question_block(q, self.variant)
 
     def encode_prompt(self, rec: Record, question_idx: int | None = None) -> str:
         parts = [SYSTEM_INSTRUCTION, f"STATE:\n{rec.state}"]
@@ -139,7 +166,11 @@ class DecisionEngine:
         return "" if question_idx == 0 else f"\nA{question_idx + 1}:"
 
     def _question_content(self, rec: Record, question_idx: int) -> str:
-        return f"STATE:\n{rec.state}\n\n{self._question_block(rec.questions[question_idx])}\n\nAnswer with a single letter."
+        block = self._question_block(rec.questions[question_idx])
+        tail = "Answer with a single letter."
+        if VARIANTS[self.variant].get("state_position") == "last":
+            return f"{block}\n\nSTATE:\n{rec.state}\n\n{tail}"
+        return f"STATE:\n{rec.state}\n\n{block}\n\n{tail}"
 
     def _boundary_prompt(self, rec: Record, question_idx: int) -> str:
         """Full prompt whose next-token distribution holds the letter slots."""
@@ -264,7 +295,8 @@ class DecisionEngine:
         return Decision(q.qtype, q.prompt, dict(pairs), value, best_p)
 
 
-def load_engine(model_name: str, device: str | None = None, dtype=None) -> DecisionEngine:
+def load_engine(model_name: str, device: str | None = None, dtype=None,
+                variant: str = "base") -> DecisionEngine:
     """Load any HF causal LM. Default target: Qwen/Qwen3.8-27B."""
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -273,4 +305,4 @@ def load_engine(model_name: str, device: str | None = None, dtype=None) -> Decis
     model = AutoModelForCausalLM.from_pretrained(model_name, **kwargs)
     if device:
         model = model.to(device)
-    return DecisionEngine(model, tok, device)
+    return DecisionEngine(model, tok, device, variant=variant)

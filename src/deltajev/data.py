@@ -17,7 +17,7 @@ from .schema import Record, Question
 DEFAULT_PARQUET = Path(__file__).resolve().parents[2] / "data" / "test-00000-of-00001.parquet"
 
 
-def load_typed_decisions(path: str | Path = DEFAULT_PARQUET) -> list[dict]:
+def _load(path: str | Path) -> list[dict]:
     df = pd.read_parquet(path)
     out = []
     for _, row in df.iterrows():
@@ -49,3 +49,27 @@ def to_record(item: dict) -> tuple[Record, list[tuple[str | None, dict | None]]]
         g = item["gold"].get(qname, {})
         golds.append((g.get("label"), g.get("probabilities")))
     return Record(item["state"], qs, item["id"]), golds
+
+
+def load_typed_decisions(path: str | Path = DEFAULT_PARQUET, workflow: str | None = None) -> list[dict]:
+    items = _load(path)
+    return [it for it in items if workflow is None or it["workflow"] == workflow]
+
+
+def load_train_items(workflow: str | None = None, data_dir: str | Path | None = None) -> list[dict]:
+    """Load TRAIN-split records (one parquet per workflow)."""
+    d = Path(data_dir or Path(__file__).resolve().parents[2] / "data")
+    items: list[dict] = []
+    for wf in WORKFLOWS:
+        if workflow and wf != workflow:
+            continue
+        items.extend(_load(d / f"{wf}_train.parquet"))
+    return items
+
+
+WORKFLOWS = [
+    "agent_trace_observability",
+    "customer_service",
+    "invoice_processing",
+    "security_incidents",
+]
