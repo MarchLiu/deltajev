@@ -1,0 +1,280 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "ModernBERT 模型架构",
+    "output": "modernbert-architecture.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "main-path",
+        "label": "主前向路径",
+        "focus": [
+          "input",
+          "unpad",
+          "embed",
+          "rope",
+          "ffn",
+          "outnorm",
+          "head"
+        ],
+        "note": "输入去 padding 后进入嵌入层，RoPE 提供位置信息，最终 LayerNorm 接输出头。"
+      },
+      {
+        "id": "attn-alternate",
+        "label": "注意力交替",
+        "focus": [
+          "rope",
+          "local",
+          "global"
+        ],
+        "note": "每 3 层一个块：2 层局部滑动窗口（window 128）+ 1 层全局双向注意力。"
+      },
+      {
+        "id": "efficiency",
+        "label": "效率设计",
+        "focus": [
+          "unpad",
+          "local",
+          "global",
+          "ffn"
+        ],
+        "note": "Unpadding 消除 padding 计算，FlashAttention 2/3 加速，矩阵乘全去 bias。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "input",
+      "type": "external",
+      "label": "输入序列",
+      "sublabel": "最长 8192 tokens",
+      "pos": [
+        40,
+        260
+      ],
+      "size": [
+        140,
+        62
+      ]
+    },
+    {
+      "id": "unpad",
+      "type": "backend",
+      "label": "Unpadding",
+      "sublabel": "去 padding · 序列打包",
+      "pos": [
+        250,
+        260
+      ],
+      "size": [
+        140,
+        62
+      ]
+    },
+    {
+      "id": "embed",
+      "type": "backend",
+      "label": "Embedding + LayerNorm",
+      "sublabel": "无绝对位置编码",
+      "pos": [
+        460,
+        260
+      ],
+      "size": [
+        160,
+        62
+      ]
+    },
+    {
+      "id": "rope",
+      "type": "backend",
+      "label": "RoPE",
+      "sublabel": "θ: 局部 1e4 / 全局 1.6e5",
+      "pos": [
+        680,
+        260
+      ],
+      "size": [
+        140,
+        62
+      ]
+    },
+    {
+      "id": "local",
+      "type": "backend",
+      "label": "局部注意力 ×2",
+      "sublabel": "滑窗 128 · FlashAttention 2",
+      "pos": [
+        890,
+        160
+      ],
+      "size": [
+        170,
+        66
+      ],
+      "tag": "每 3 层占 2 层"
+    },
+    {
+      "id": "global",
+      "type": "backend",
+      "label": "全局注意力 ×1",
+      "sublabel": "双向 · FlashAttention 3",
+      "pos": [
+        890,
+        370
+      ],
+      "size": [
+        170,
+        66
+      ],
+      "tag": "每 3 层占 1 层"
+    },
+    {
+      "id": "ffn",
+      "type": "backend",
+      "label": "GeGLU FFN",
+      "sublabel": "8× 扩展 · 矩阵乘无 bias",
+      "pos": [
+        1120,
+        260
+      ],
+      "size": [
+        160,
+        62
+      ]
+    },
+    {
+      "id": "outnorm",
+      "type": "backend",
+      "label": "最终 LayerNorm",
+      "sublabel": "输出前归一化",
+      "pos": [
+        1340,
+        260
+      ],
+      "size": [
+        140,
+        62
+      ]
+    },
+    {
+      "id": "head",
+      "type": "external",
+      "label": "输出头",
+      "sublabel": "MLM / 分类（cls pooling）",
+      "pos": [
+        1540,
+        260
+      ],
+      "size": [
+        150,
+        62
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "input-unpad",
+      "from": "input",
+      "to": "unpad",
+      "label": "定长批处理",
+      "variant": "emphasis"
+    },
+    {
+      "id": "unpad-embed",
+      "from": "unpad",
+      "to": "embed"
+    },
+    {
+      "id": "embed-rope",
+      "from": "embed",
+      "to": "rope",
+      "label": "双向编码器入口",
+      "labelAt": [
+        650,
+        336
+      ]
+    },
+    {
+      "id": "rope-local",
+      "from": "rope",
+      "to": "local",
+      "label": "局部 θ=1e4"
+    },
+    {
+      "id": "rope-global",
+      "from": "rope",
+      "to": "global",
+      "label": "全局 θ=1.6e5",
+      "variant": "dashed"
+    },
+    {
+      "id": "local-ffn",
+      "from": "local",
+      "to": "ffn"
+    },
+    {
+      "id": "global-ffn",
+      "from": "global",
+      "to": "ffn"
+    },
+    {
+      "id": "ffn-outnorm",
+      "from": "ffn",
+      "to": "outnorm",
+      "label": "残差堆叠输出",
+      "labelAt": [
+        1310,
+        336
+      ]
+    },
+    {
+      "id": "outnorm-head",
+      "from": "outnorm",
+      "to": "head",
+      "label": "cls pooling",
+      "variant": "emphasis"
+    },
+    {
+      "id": "block-loop",
+      "from": "global",
+      "to": "local",
+      "label": "×N/3 块循环",
+      "variant": "dashed",
+      "labelAt": [
+        975,
+        100
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "对比原版 BERT",
+      "items": [
+        "绝对位置编码 → RoPE，原生 8192 上下文",
+        "GeLU MLP → GeGLU FFN（8× 扩展）",
+        "矩阵乘全部去 bias，仅保留必要 bias"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "效率设计",
+      "items": [
+        "Unpadding + 序列打包，padding 不耗算力",
+        "局部层用 FlashAttention 2，全局层用 FlashAttention 3",
+        "注意力头数取 64 的倍数、词表取 2 的幂，贴合硬件"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "规格（base 配置）",
+      "items": [
+        "hidden 768 · FFN 中间维 1152 · 12 头",
+        "22 层按 3 层一块交替：局部×2 + 全局×1",
+        "在 2 万亿 tokens 上训练的 encoder-only 双向编码器"
+      ]
+    }
+  ]
+}

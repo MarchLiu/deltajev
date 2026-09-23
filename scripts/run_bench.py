@@ -25,19 +25,27 @@ def main() -> int:
     ap.add_argument("--n", type=int, default=50, help="records to run; 0 = all 400")
     ap.add_argument("--mode", choices=["fresh", "shared"], default="shared")
     ap.add_argument("--device", default="mps")
+    ap.add_argument("--variant", default="base")
+    ap.add_argument("--workflow", default=None, help="restrict to one workflow")
+    ap.add_argument("--split", default="test", choices=["test", "train"])
     ap.add_argument("--out", default="results/raw")
     args = ap.parse_args()
 
-    items = load_typed_decisions()
+    if args.split == "train":
+        import pandas as pd
+        from deltajev.data import load_train_items
+        items = load_train_items(workflow=args.workflow)
+    else:
+        items = load_typed_decisions(workflow=args.workflow)
     if args.n:
         items = items[: args.n]
 
-    engine = load_engine(args.model, args.device)
+    engine = load_engine(args.model, args.device, variant=args.variant)
     print(f"model={args.model} device={args.device} records={len(items)} mode={args.mode}", flush=True)
 
     outdir = Path(args.out)
     outdir.mkdir(parents=True, exist_ok=True)
-    tag = f"{args.model.split('/')[-1]}_{args.mode}_{args.n or 'full'}"
+    tag = f"{args.model.split('/')[-1]}_{args.variant}_{args.split}_{args.mode}_{args.n or 'full'}" + (f"_{args.workflow}" if args.workflow else "")
     pred_path = outdir / f"preds_{tag}.jsonl"
 
     correct = total = 0
@@ -93,6 +101,8 @@ def main() -> int:
     wall = time.perf_counter() - t0
     summary = {
         "model": args.model,
+        "variant": args.variant,
+        "split": args.split,
         "mode": args.mode,
         "records": len(items),
         "decisions_scored": sum(1 for _ in open(pred_path)) * 5,
