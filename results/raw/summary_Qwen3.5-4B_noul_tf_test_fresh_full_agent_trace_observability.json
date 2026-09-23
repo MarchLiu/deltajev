@@ -1,0 +1,28 @@
+{
+  "model": "Qwen/Qwen3.5-4B",
+  "variant": "noul_tf",
+  "split": "test",
+  "mode": "fresh",
+  "records": 100,
+  "decisions_scored": 500,
+  "accuracy": 0.506,
+  "n_scored": 500,
+  "mean_tvd": 0.4034,
+  "accuracy_by_type": {
+    "choice": {
+      "acc": 0.58,
+      "n": 200
+    },
+    "noul": {
+      "acc": 0.58,
+      "n": 100
+    },
+    "score": {
+      "acc": 0.395,
+      "n": 200
+    }
+  },
+  "wall_seconds": 379.3,
+  "decisions_per_second": 1.318,
+  "predictions": "results/raw/preds_Qwen3.5-4B_noul_tf_test_fresh_full_agent_trace_observability.jsonl"
+}

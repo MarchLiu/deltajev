@@ -1,0 +1,102 @@
+{
+  "model": "Qwen/Qwen3.5-4B",
+  "per_workflow_records": 30,
+  "frozen_variant": "minimal_system",
+  "frozen_sha256": "170b32997800b139",
+  "rows": [
+    {
+      "variant": "base",
+      "acc": 0.5533,
+      "n": 600,
+      "by_workflow": {
+        "agent_trace_observability": {
+          "acc": 0.4933,
+          "n": 150
+        },
+        "customer_service": {
+          "acc": 0.64,
+          "n": 150
+        },
+        "invoice_processing": {
+          "acc": 0.5267,
+          "n": 150
+        },
+        "security_incidents": {
+          "acc": 0.5533,
+          "n": 150
+        }
+      }
+    },
+    {
+      "variant": "noul_tf",
+      "acc": 0.5617,
+      "n": 600,
+      "by_workflow": {
+        "agent_trace_observability": {
+          "acc": 0.4533,
+          "n": 150
+        },
+        "customer_service": {
+          "acc": 0.64,
+          "n": 150
+        },
+        "invoice_processing": {
+          "acc": 0.56,
+          "n": 150
+        },
+        "security_incidents": {
+          "acc": 0.5933,
+          "n": 150
+        }
+      }
+    },
+    {
+      "variant": "minimal_system",
+      "acc": 0.5733,
+      "n": 600,
+      "by_workflow": {
+        "agent_trace_observability": {
+          "acc": 0.5067,
+          "n": 150
+        },
+        "customer_service": {
+          "acc": 0.6067,
+          "n": 150
+        },
+        "invoice_processing": {
+          "acc": 0.6067,
+          "n": 150
+        },
+        "security_incidents": {
+          "acc": 0.5733,
+          "n": 150
+        }
+      }
+    },
+    {
+      "variant": "state_last",
+      "acc": 0.56,
+      "n": 600,
+      "by_workflow": {
+        "agent_trace_observability": {
+          "acc": 0.46,
+          "n": 150
+        },
+        "customer_service": {
+          "acc": 0.62,
+          "n": 150
+        },
+        "invoice_processing": {
+          "acc": 0.58,
+          "n": 150
+        },
+        "security_incidents": {
+          "acc": 0.58,
+          "n": 150
+        }
+      }
+    }
+  ],
+  "per_type": {},
+  "wall_seconds": 2704.2
+}

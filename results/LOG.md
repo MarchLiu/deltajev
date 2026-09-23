@@ -128,3 +128,37 @@ Qwen3.8-27B BF16 @ MPS（无 GDN 优化内核），5 题记录形状，268–770
 1–2 个数量级，主因是 MPS 上 DeltaNet 走参考实现（无 causal_conv1d /
 flash-linear-attention / Metal 内核）。本探针支持的是**机制层面的相对结论**，
 不支持任何绝对性能主张。生产级验证需要 CUDA（3090 级）或优化 Metal 后端。
+
+## Held-out 复核（2026-09-23）
+
+**泄漏疑虑的直接检验**：参与 prompt 迭代的 0–19 号记录 acc 0.620，未参与
+迭代的 20–399 号 0.731——调优子集反而更低（混淆因素：前 20 条全是
+agent_trace workflow），无过拟合证据。
+
+**协议升级**：prompt 选择全部移到 train split（4 workflow × 300 条，取每
+workflow 前 30 条做开发集），4B 上评 4 个变体：
+
+| variant | train acc（600 决策） |
+|---|---:|
+| base (v0.1) | 0.553 |
+| noul_tf | 0.562 |
+| **minimal_system** | **0.573** |
+| state_last | 0.560 |
+
+冻结 `minimal_system`（各变体差距在 ±0.02 噪声边缘）。
+
+**Leave-one-workflow-out（4B，test 侧）**：每折用其余 3 个 workflow 的
+train 选变体，在 held-out workflow 的 100 条 test 上评：
+
+| 折 | 冻结变体 | held-out test acc |
+|---|---|---:|
+| agent_trace_observability | noul_tf | 0.506 |
+| customer_service | minimal_system | 0.684 |
+| invoice_processing | minimal_system | 0.580 |
+| security_incidents | minimal_system | 0.614 |
+| **均值** | | **0.596** |
+
+LOWO 均值 0.596 ≥ 原"带泄漏"全量 0.5735——held-out 选出来的 prompt 并没有
+比调参版更差，泄漏膨胀的证据不存在。
+
+**最终干净验证**：27B 全量 test + 冻结 minimal_system 运行中（后台）。

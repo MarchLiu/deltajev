@@ -1,0 +1,28 @@
+{
+  "model": "Qwen/Qwen3.5-4B",
+  "variant": "minimal_system",
+  "split": "test",
+  "mode": "fresh",
+  "records": 100,
+  "decisions_scored": 500,
+  "accuracy": 0.684,
+  "n_scored": 500,
+  "mean_tvd": 0.3041,
+  "accuracy_by_type": {
+    "choice": {
+      "acc": 0.74,
+      "n": 200
+    },
+    "noul": {
+      "acc": 0.72,
+      "n": 100
+    },
+    "score": {
+      "acc": 0.61,
+      "n": 200
+    }
+  },
+  "wall_seconds": 621.0,
+  "decisions_per_second": 0.805,
+  "predictions": "results/raw/preds_Qwen3.5-4B_minimal_system_test_fresh_full_customer_service.jsonl"
+}
