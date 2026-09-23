@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Qwen3.8-27B 模型结构",
+    "output": "qwen3.8-27b-architecture.html",
+    "quality_profile": "showcase",
+    "views": [
+      { "id": "main-path", "label": "主推理路径", "focus": ["prompt", "embed", "gdn", "attn", "head", "probs"], "note": "一次前向：嵌入 → 混合层堆叠 → 归一化与输出头 → 每选项概率。" },
+      { "id": "state-side", "label": "循环状态侧路", "focus": ["gdn", "delta-state", "kv", "attn"], "note": "48 层 GDN 读写定长状态；16 层注意力维护增长的 KV cache。" },
+      { "id": "decision-iface", "label": "决策接口", "focus": ["prompt", "head", "probs"], "note": "运行时 schema：noul / choice / score，字母 A–P 的 logit 直接成概率，零文本生成。" }
+    ]
+  },
+  "components": [
+    { "id": "prompt", "type": "external", "label": "类型化决策提示", "sublabel": "state + qtype + options", "pos": [40, 260], "size": [150, 64], "tag": "JSONL 输入" },
+    { "id": "embed", "type": "backend", "label": "Token Embedding", "sublabel": "词向量查表", "pos": [270, 260], "size": [140, 60] },
+    { "id": "gdn", "type": "backend", "label": "GatedDeltaNet ×48 层", "sublabel": "线性注意力 · 定长循环状态", "pos": [490, 170], "size": [180, 68], "tag": "16 块 × 每块 3 层" },
+    { "id": "attn", "type": "backend", "label": "GatedAttention ×16 层", "sublabel": "标准因果注意力", "pos": [490, 370], "size": [180, 68], "tag": "16 块 × 每块 1 层" },
+    { "id": "delta-state", "type": "database", "label": "GDN 循环状态", "sublabel": "定长 · 不随序列增长", "pos": [750, 170], "size": [150, 62] },
+    { "id": "kv", "type": "database", "label": "KV Cache", "sublabel": "仅 16 层保留 · 随序列增长", "pos": [750, 370], "size": [150, 62] },
+    { "id": "head", "type": "backend", "label": "RMSNorm + LM Head", "sublabel": "单次前向读 logit", "pos": [750, 260], "size": [150, 62] },
+    { "id": "probs", "type": "external", "label": "每选项概率", "sublabel": "noul / choice / score · A–P", "pos": [970, 260], "size": [150, 64], "tag": "零解码" }
+  ],
+  "connections": [
+    { "id": "prompt-embed", "from": "prompt", "to": "embed", "label": "分词", "variant": "emphasis" },
+    { "id": "embed-stack", "from": "embed", "to": "gdn", "label": "进入混合堆叠" },
+    { "id": "embed-attn", "from": "embed", "to": "attn", "label": "同堆叠跨块流动", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelAt": [430, 452] },
+    { "id": "gdn-state", "from": "gdn", "to": "delta-state", "label": "读写定长状态" },
+    { "id": "attn-kv", "from": "attn", "to": "kv", "label": "追加 KV" },
+    { "id": "gdn-head", "from": "delta-state", "to": "head", "fromSide": "bottom", "toSide": "top" },
+    { "id": "kv-head", "from": "kv", "to": "head", "fromSide": "top", "toSide": "bottom" },
+    { "id": "head-probs", "from": "head", "to": "probs", "label": "softmax", "variant": "emphasis" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "混合层堆叠", "items": ["64 层 = 16 块 × [3×GatedDeltaNet + 1×GatedAttention]", "75% 的层携带定长循环状态，25% 保留注意力 KV cache"] },
+    { "dot": "amber", "title": "成本假设", "items": ["H1：状态越长，fresh 模式延迟增长越缓", "H2：一次 prefill 分支多次决策时，仅 25% 的层增加 KV cache", "H3：27B 决策质量 ≥ 4B，接近前沿模型一致率"] },
+    { "dot": "violet", "title": "决策接口", "items": ["noul / choice / score 三类运行时判定", "字母 A–P 选项的 logit 直接读出概率，不做文本生成", "deltajev 实测 BF16：准确率 0.726，TVD 0.255"] }
+  ]
+}

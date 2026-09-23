@@ -1,0 +1,27 @@
+[project]
+name = "deltajev"
+version = "0.1.0"
+description = "Semantic-if typed decisions from Qwen3.8-27B (Gated DeltaNet hybrid) - does linear attention make decision-native inference cheaper?"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "torch>=2.4",
+    "transformers>=4.51",
+    "accelerate>=0.33",
+    "numpy",
+]
+
+[project.optional-dependencies]
+eval = ["datasets", "scipy", "tqdm"]
+dev = ["pytest"]
+
+[project.scripts]
+deltajev = "deltajev.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

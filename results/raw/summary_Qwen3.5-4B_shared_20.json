@@ -1,0 +1,26 @@
+{
+  "model": "Qwen/Qwen3.5-4B",
+  "mode": "shared",
+  "records": 20,
+  "decisions_scored": 100,
+  "accuracy": 0.39,
+  "n_scored": 100,
+  "mean_tvd": 0.4541,
+  "accuracy_by_type": {
+    "choice": {
+      "acc": 0.55,
+      "n": 40
+    },
+    "noul": {
+      "acc": 0.35,
+      "n": 20
+    },
+    "score": {
+      "acc": 0.25,
+      "n": 40
+    }
+  },
+  "wall_seconds": 47.6,
+  "decisions_per_second": 2.101,
+  "predictions": "results/raw/preds_Qwen3.5-4B_shared_20.jsonl"
+}

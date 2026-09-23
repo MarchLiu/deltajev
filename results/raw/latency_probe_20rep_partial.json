@@ -1,0 +1,28 @@
+{
+  "model": "Qwen/Qwen3.8-27B",
+  "device": "mps",
+  "cells": [
+    {
+      "state_tokens": 268,
+      "mode": "fresh",
+      "repeats": 20,
+      "median_s": 24.579,
+      "p90_s": 30.26,
+      "per_decision_median_s": 4.916
+    },
+    {
+      "state_tokens": 268,
+      "mode": "shared",
+      "repeats": 20,
+      "median_s": 12.971,
+      "p90_s": 15.096,
+      "per_decision_median_s": 2.594
+    },
+    {
+      "state_tokens": 1366,
+      "mode": "fresh",
+      "repeats": 0,
+      "warmup_s": 109.644
+    }
+  ]
+}

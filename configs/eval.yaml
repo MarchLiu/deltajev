@@ -1,0 +1,27 @@
+# Frozen evaluation matrix v0.1 — do not edit after first frozen run.
+protocol:
+  id: deltajev-eval-v0.1
+  seed: 20260922
+  modes: [fresh, shared]
+  models:
+    - Qwen/Qwen3.5-4B      # published-baseline reproduction
+    - Qwen/Qwen3.8-27B     # primary subject
+datasets:
+  authored104:
+    source: configs/authored104.jsonl   # 8 domains x 13 decisions
+  perturbations:
+    source: configs/perturbations.jsonl
+    kinds: [option_reversal, missing_evidence, paraphrase]
+  typesafe_public_subset:
+    source: external  # TypeSafe workflow evals, optional public rows only
+  typed_decisions:
+    source: hf:LocalLLaMA/typed-decisions
+    use: [tvd, soft_label]
+latency_probe:
+  state_lengths_tokens: [254, 1363, 5165, 7697]
+  repeats: 20
+metrics: [balanced_accuracy, accuracy, tvd, decisions_per_second]
+known_limits:
+  - probabilities uncalibrated (conditional on declared options)
+  - option-order sensitivity must be reported
+  - 27B BF16 ~55GB; 4-bit runs reported separately

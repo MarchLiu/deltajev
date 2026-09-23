@@ -1,0 +1,26 @@
+{
+  "model": "Qwen/Qwen3.8-27B",
+  "mode": "fresh",
+  "records": 10,
+  "decisions_scored": 50,
+  "accuracy": 0.66,
+  "n_scored": 50,
+  "mean_tvd": 0.2854,
+  "accuracy_by_type": {
+    "choice": {
+      "acc": 0.65,
+      "n": 20
+    },
+    "noul": {
+      "acc": 0.6,
+      "n": 10
+    },
+    "score": {
+      "acc": 0.7,
+      "n": 20
+    }
+  },
+  "wall_seconds": 148.3,
+  "decisions_per_second": 0.337,
+  "predictions": "results/raw/preds_Qwen3.8-27B_fresh_10.jsonl"
+}
